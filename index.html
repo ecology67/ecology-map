@@ -1,0 +1,593 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Чистые Люберцы — карта загрязнений</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Onest:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+:root{--forest:#1f4d36;--leaf:#2f7d4a;--lime:#d3e88a;--cream:#f6f3e8;--card:#fffdf6;--ink:#1d2f25;--water:#3d8ea3;--rust:#d9531e;--line:#dcd8c4;color-scheme:light}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}body{height:100dvh}
+body{font-family:Onest,system-ui,sans-serif;background:var(--cream);color:var(--ink);display:flex;flex-direction:column;line-height:1.5}
+h1,h2{font-family:Lora,Georgia,serif}
+header{position:relative;overflow:hidden;background:linear-gradient(120deg,#143a28,#2a6b44 60%,#4f9a50);color:#fff;padding:14px 28px 0;display:flex;align-items:flex-end;gap:36px;flex-wrap:wrap}
+header .deco{position:absolute;right:0;top:0;height:100%;opacity:.2;pointer-events:none}
+.brand{display:flex;align-items:center;gap:14px;padding-bottom:10px;position:relative}
+h1{font-size:1.7rem;margin:0;line-height:1.1}
+.brand p{margin:2px 0 0;font-size:.9rem;opacity:.85}
+nav{display:flex;gap:6px;position:relative}
+nav button{font:inherit;font-weight:500;background:#ffffff1f;border:0;border-radius:12px 12px 0 0;padding:10px 18px;color:#fff;cursor:pointer}
+nav button:hover{background:#ffffff38}
+nav button[aria-selected=true]{background:var(--cream);color:var(--forest);font-weight:700}
+:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+main{flex:1;position:relative;min-height:0}
+section{position:absolute;inset:0;overflow:auto}
+section[hidden]{display:none}
+#p-map{display:flex;overflow:hidden}#p-map[hidden]{display:none}
+#map{flex:1;height:100%}
+.hint{position:absolute;z-index:500;left:calc(50% - 170px);bottom:26px;transform:translateX(-50%);background:var(--forest);color:#fff;padding:8px 18px;border-radius:24px;font-size:.88rem;box-shadow:0 3px 12px #0004;max-width:70%;text-align:center}
+.search{position:absolute;z-index:600;left:56px;top:10px;width:min(420px,calc(100% - 170px))}
+.search form{display:flex;box-shadow:0 3px 12px #0003;border-radius:24px;overflow:hidden}
+.search input{border:0;border-radius:0;padding:11px 16px;background:#fff;color:var(--ink)}
+.search button{border:0;background:var(--leaf);color:#fff;font:inherit;font-weight:700;padding:0 18px;cursor:pointer}
+#sres{list-style:none;margin:6px 0 0;padding:0;background:#fff;border-radius:12px;box-shadow:0 4px 14px #0004;max-height:240px;overflow:auto}
+#sres[hidden]{display:none}
+#sres li{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--line);font-size:.9rem}
+#sres li:hover{background:#eaf3dc}
+.btn{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 18px;background:var(--leaf);color:#fff;cursor:pointer}
+.btn:disabled{opacity:.6}
+.btn.ghost{background:none;color:inherit;border:1px solid var(--line)}
+dialog{border:0;border-top:6px solid var(--leaf);border-radius:16px;background:var(--card);color:var(--ink);width:min(450px,94vw);padding:20px;box-shadow:0 12px 40px #0006}
+dialog::backdrop{background:#10281c99}
+label{display:block;font-weight:500;margin:12px 0 4px;font-size:.9rem}
+label small{opacity:.65;font-weight:400}
+input,select,textarea{font:inherit;width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+#prev{max-width:100%;max-height:160px;margin-top:8px;border-radius:10px;display:none}
+.pop img{width:220px;max-width:100%;border-radius:8px;margin-top:6px;display:block}
+#side{width:340px;border-left:1px solid var(--line);background:var(--card);overflow:auto;padding:16px}
+#side h2{margin:0 0 10px;font-size:1.1rem;color:var(--forest)}
+.how{margin:0 0 16px;padding:12px 14px;background:#e6f0d2;border-radius:14px;font-size:.88rem}
+.how b{font-family:Lora,Georgia,serif;color:var(--forest)}
+.how ol{margin:6px 0 0;padding-left:20px}
+#list{list-style:none;margin:0;padding:0}
+#list li{padding:10px 12px;border:1px solid var(--line);border-left:5px solid var(--rust);border-radius:10px;margin-bottom:8px;cursor:pointer;background:#fff}
+#list li:hover{border-color:var(--leaf);border-left-color:var(--leaf)}
+#list small{opacity:.65}#list img{width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-top:6px}
+.doc{max-width:780px;margin:0 auto;padding:22px 18px 50px}
+.doc h2{margin:0 0 4px;font-size:1.5rem;color:var(--forest)}
+.doc textarea{min-height:420px;line-height:1.55}
+.tips{background:#e6f0d2;border-left:5px solid var(--leaf);padding:12px 16px;border-radius:0 12px 12px 0;margin:14px 0;font-size:.9rem}
+.tips ul{margin:6px 0 0;padding-left:18px}
+.note{font-size:.8rem;opacity:.7;margin-top:10px}
+.btn.sm{padding:5px 11px;font-size:.85rem;border-radius:8px}.btn.danger{background:#b3321a}
+.admbtn{margin-left:auto;position:relative;margin-bottom:12px;background:none;border:1px solid #ffffff77;color:#fff;border-radius:20px;padding:6px 14px;font:inherit;font-size:.82rem;cursor:pointer}
+.tag{display:inline-block;background:#555;color:#fff;border-radius:6px;padding:1px 8px;font-size:.75rem;margin-bottom:4px}
+#reqbox{margin-bottom:16px}#rlist{list-style:none;margin:0;padding:0}
+#rlist li{padding:10px 12px;border:1px solid var(--line);border-left:5px solid #b3321a;border-radius:10px;margin-bottom:8px;background:#fff;font-size:.9rem}
+.stats{display:flex;gap:8px;margin-bottom:12px}.stats div{flex:1;background:#e6f0d2;border-radius:12px;padding:8px;text-align:center;line-height:1.2}
+.stats b{display:block;font:700 1.45rem Lora,Georgia,serif;color:var(--forest)}.stats span{font-size:.75rem}
+.filters{display:flex;gap:6px;margin-bottom:8px}.filters select{padding:7px;font-size:.85rem}
+.tag.ok{background:var(--leaf)}.pr{margin-top:8px;justify-content:flex-start;flex-wrap:wrap}
+.locbtn{position:absolute;z-index:600;left:10px;top:88px;background:#fff;border:0;border-radius:20px;padding:6px 12px;font:inherit;font-size:.82rem;font-weight:700;color:var(--forest);box-shadow:0 2px 8px #0003;cursor:pointer}
+.page{max-width:820px;margin:0 auto;padding:22px 18px 50px}.page h2{margin:0 0 6px;color:var(--forest);font-size:1.5rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin:12px 0}
+.card h3{margin:0 0 4px;font-family:Lora,Georgia,serif;color:var(--forest);font-size:1.05rem}.card ul,.card ol{margin:6px 0 0;padding-left:20px}
+.pin{background:none;border:0}.pin svg{filter:drop-shadow(0 2px 2px #0005);transition:transform .15s;transform-origin:50% 100%}.pin:hover svg{transform:scale(1.12)}
+.legend{margin:0 0 12px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:.85rem}.legend summary{cursor:pointer;font-weight:700;color:var(--forest)}
+.lg{display:flex;align-items:center;gap:8px;margin-top:6px}
+.sheetbtn{display:none}.admbtn .short{display:none}
+@media (max-width:800px){
+  header{padding:8px 12px 0;gap:4px}header .deco{display:none}
+  .brand{order:0;flex:1 1 auto;min-width:0;padding:0 0 4px;gap:10px}.brand svg{width:34px;height:34px}h1{font-size:1.2rem}.brand p{display:none}
+  .admbtn{order:1;position:static;margin:0 0 4px auto;font-size:.78rem;padding:5px 12px}.admbtn .full{display:none}.admbtn .short{display:inline}
+  nav{order:2;width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}nav button{white-space:nowrap;padding:8px 12px;font-size:.9rem}
+  #p-map{display:block}#map{position:absolute;inset:0;height:100%}
+  #side{position:absolute;z-index:900;left:8px;right:8px;bottom:24px;width:auto;height:44px;overflow:hidden;border:1px solid var(--line);border-radius:16px;box-shadow:0 -4px 16px #0003;padding:0 14px;transition:height .25s}
+  #side.open{height:62%;overflow:auto;padding-bottom:16px}
+  .sheetbtn{display:block;position:sticky;top:0;z-index:2;width:100%;height:44px;margin:0 0 8px;background:var(--card);border:0;font:inherit;font-weight:700;color:var(--forest);cursor:pointer}
+  .search{left:54px;right:54px;width:auto;top:8px}.locbtn{top:84px}
+  .hint{left:50%;bottom:78px;max-width:90%}
+  input,select,textarea{font-size:16px}dialog{max-height:88dvh;overflow:auto}.how{display:none}
+  .page,.doc{padding:16px 12px 40px}.doc textarea{min-height:340px}
+}
+</style></head><body><header>
+<svg class="deco" viewBox="0 0 420 120" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><g fill="#d3e88a"><path d="M300 110c0-50 30-90 90-100 0 55-35 95-90 100z"/><path d="M230 120c0-35 20-65 60-72 0 38-24 68-60 72z"/><path d="M370 70c0-30 18-52 48-56 0 32-18 54-48 56z"/><circle cx="200" cy="30" r="10"/><circle cx="260" cy="20" r="6"/></g></svg>
+<div class="brand"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#d3e88a"/><path d="M12 34C12 20 20 12 36 12c0 14-8 22-20 22z" fill="#1f4d36"/><path d="M13 36 28 21" stroke="#d3e88a" stroke-width="2" fill="none"/></svg>
+<div><h1>Чистые Люберцы</h1><p>Карта загрязнений города</p></div></div>
+<nav role="tablist"><button id="t-map" aria-selected="true">Карта</button><button id="t-doc" aria-selected="false">Обращение в администрацию</button><button id="t-tips" aria-selected="false">Советы</button><button id="t-about" aria-selected="false">О проекте</button></nav><button id="adm" class="admbtn"><span class="full">Вход для администратора</span><span class="short">Админ</span></button></header>
+<main><section id="p-map"><div class="hint">Нажмите на карту, чтобы отметить загрязнённое место</div><div class="search"><form id="sform"><input id="q" placeholder="Начните вводить адрес или место" autocomplete="off" aria-label="Поиск адреса"><button type="submit">Найти</button></form><ul id="sres" hidden></ul></div><button id="locate" class="locbtn">Я здесь</button><div id="map"></div>
+<aside id="side"><button id="sheetbtn" class="sheetbtn" type="button">Список, фильтры, настройки</button><div class="how"><b>Как это работает</b><ol><li>Найдите место через поиск или на карте.</li><li>Нажмите на карту и добавьте описание. Фото по желанию.</li><li>Откройте вкладку «Обращение» и отправьте в администрацию.</li></ol></div><div class="stats"><div><b id="st-all">0</b><span>отметок</span></div><div><b id="st-open">0</b><span>не убрано</span></div><div><b id="st-done">0</b><span>убрано</span></div></div>
+<div class="filters"><select id="ftype" aria-label="Тип загрязнения"><option value="">Все типы</option></select><select id="fstat" aria-label="Статус"><option value="">Все</option><option value="open">Не убрано</option><option value="done">Убрано</option></select></div>
+<details class="legend"><summary>Обозначения на карте</summary><div id="lgbox"></div></details>
+<details class="legend"><summary>Настройки</summary><label style="display:flex;gap:8px;align-items:center;font-weight:400;margin:8px 0 0"><input type="checkbox" id="setdone" style="width:auto"> Показывать зелёные галочки у убранных мест</label></details>
+<button class="btn ghost sm" id="csv" style="margin-bottom:14px">Скачать список (CSV)</button>
+<div id="reqbox" hidden><h2>Запросы на удаление</h2><ul id="rlist"></ul></div><h2>Отметки жителей</h2><ul id="list"></ul></aside></section>
+<section id="p-doc" hidden><div class="doc"><h2>Шаблон обращения</h2><p>Выберите отметку, и данные о месте подставятся в текст. Остальное заполните вручную.</p>
+<label for="pick">Подставить данные из отметки</label><select id="pick"></select><label for="tptype">Вид загрязнения (для него подберётся нужный текст)</label><select id="tptype"><option>Стихийная свалка</option><option>Свалка строительного мусора</option><option>Мусор в лесу или у воды</option><option>Переполненные контейнеры</option><option>Загрязнение водоёма</option><option>Разлив нефтепродуктов или масла</option><option>Сжигание мусора, дым</option><option>Неприятный запах, выбросы</option><option>Брошенный автомобиль или техника</option><option>Неубранная территория</option><option value="__other">Другое</option></select><div class="tips" id="tptips"></div>
+<div class="tips"><b>Как отправить</b><ul><li>Через портал «Добродел» (dobrodel.mosreg.ru) или раздел «Обращения» на сайте администрации округа Люберцы.</li><li>Письмом или лично в приёмной. Проверьте адрес и режим работы на официальном сайте.</li><li>Приложите фото. По закону № 59-ФЗ ответ должен прийти в течение 30 дней.</li></ul></div>
+<label for="tpl">Текст обращения</label><textarea id="tpl"></textarea>
+<div class="row"><button class="btn" id="copy">Копировать текст</button></div>
+<p class="note">Данные в квадратных скобках замените своими. Шаблон примерный, не является юридической консультацией.</p></div></section>
+<section id="p-tips" hidden><div class="page"><h2>Советы</h2><p>Что делать, если нашли загрязнение, и как не создавать его самим.</p>
+<div class="card"><h3>Нашли свалку или загрязнение</h3><ol><li>Сфотографируйте место издалека. Не заходите на опасные участки и не трогайте незнакомые ёмкости и химикаты.</li><li>Отметьте место на карте этого сайта.</li><li>Откройте вкладку «Обращение в администрацию», выберите свою отметку и отправьте письмо.</li><li>Ответ должен прийти в течение 30 дней. Если места убрали, нажмите на точку и попросите отметить её как убранную.</li></ol></div>
+<div class="card"><h3>Срочные случаи</h3><p style="margin:4px 0 0">Если есть угроза людям (сильный дым, пожар, разлив опасных веществ), звоните по номеру <b>112</b>.</p></div>
+<div class="card"><h3>Раздельный сбор отходов</h3><ul><li>Бумагу, стекло, пластик и металл сдавайте отдельно от обычного мусора.</li><li>Батарейки, лампы и градусники нельзя выбрасывать в обычный контейнер, их принимают в специальных пунктах.</li><li>Ближайшие пункты приёма вторсырья можно найти на сайте recyclemap.ru.</li><li>Крупный мусор и ремонтные отходы не оставляйте у контейнеров. Их вывоз заказывают через управляющую компанию.</li></ul></div></div></section>
+<section id="p-about" hidden><div class="page"><h2>О проекте</h2>
+<div class="card"><h3>Зачем он нужен</h3><p style="margin:4px 0 0">Сайт собирает на одной карте места загрязнения в Люберцах, чтобы о них узнавали и жители, и администрация. Любой может отметить место, приложить фото и отправить обращение по готовому шаблону.</p></div>
+<div class="card"><h3>Как это работает</h3><ul><li>Нажмите на карту, опишите проблему, фото по желанию.</li><li>Кнопка «Я тоже вижу проблему» показывает, какие места беспокоят многих.</li><li>Когда место убрали, администратор помечает точку зелёной.</li></ul></div>
+<div class="card"><h3>Правила и модерация</h3><ul><li>Отметки с нецензурной лексикой скрываются и проверяются администратором.</li><li>Точки удаляет только администратор, по просьбе жителей или при нарушениях.</li><li>Не загружайте фото людей и номеров автомобилей.</li></ul></div>
+<div class="card"><h3>Какие данные хранятся</h3><p style="margin:4px 0 0">Тип и описание загрязнения, координаты и фото. Имя и телефон не требуются. Контакт в просьбе об удалении виден только администратору.</p></div>
+<div class="card"><h3>Контакты</h3><p style="margin:4px 0 0">Проект «Чистые Люберцы». Связь с администратором: <a href="mailto:chisryelubercy@gmail.com">chisryelubercy@gmail.com</a></p></div>
+</div></section>
+<dialog id="dlg"><form method="dialog" id="form"><b style="font-size:1.1rem">Новая отметка</b>
+<label for="type">Что за загрязнение</label><select id="type"><option>Стихийная свалка</option><option>Свалка строительного мусора</option><option>Мусор в лесу или у воды</option><option>Переполненные контейнеры</option><option>Загрязнение водоёма</option><option>Разлив нефтепродуктов или масла</option><option>Сжигание мусора, дым</option><option>Неприятный запах, выбросы</option><option>Брошенный автомобиль или техника</option><option>Неубранная территория</option><option value="__custom">Другое: напишу сам…</option></select>
+<input id="ctype" hidden maxlength="80" placeholder="Напишите, что за загрязнение" style="margin-top:8px">
+<label for="desc">Описание</label><textarea id="desc" rows="3" placeholder="Что здесь и как давно"></textarea>
+<label for="photo">Фото места <small>(необязательно)</small></label><input type="file" id="photo" accept="image/*"><small style="opacity:.7">Не снимайте людей и номера автомобилей.</small><img id="prev" alt="Предпросмотр фото">
+<div class="row"><button type="button" class="btn ghost" id="cancel">Отмена</button><button type="submit" class="btn" id="save">Сохранить отметку</button></div></form></dialog></main>
+<dialog id="ldlg"><form id="lform" method="dialog"><b style="font-size:1.1rem">Вход для администратора</b>
+<label for="lmail">Почта</label><input id="lmail" type="email" autocomplete="username" required>
+<label for="lpass">Пароль</label><input id="lpass" type="password" autocomplete="current-password" required>
+<div class="row"><button type="button" class="btn ghost" onclick="document.getElementById('ldlg').close()">Отмена</button><button class="btn" type="submit">Войти</button></div></form></dialog>
+<dialog id="rdlg"><form id="rform" method="dialog"><b style="font-size:1.1rem">Просьба убрать точку</b>
+<p style="font-size:.9rem;margin:6px 0 0">Например: вы отправили обращение, и место убрали. Администратор проверит и удалит точку.</p>
+<label for="rreason">Что случилось</label><textarea id="rreason" rows="3" maxlength="500" required placeholder="Место убрали / отметка поставлена по ошибке"></textarea>
+<label for="rcontact">Как с вами связаться <small>(необязательно)</small></label><input id="rcontact" maxlength="100" placeholder="Почта или телефон">
+<div class="row"><button type="button" class="btn ghost" id="rcancel">Отмена</button><button class="btn" type="submit">Отправить</button></div></form></dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>// Вставьте данные из Supabase: Project Settings -> API
+window.CFG = {
+  url: "https://czwconnfgejstcvaxiug.supabase.co",
+  key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6d2Nvbm5mZ2Vqc3RjdmF4aXVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4ODY5NzMsImV4cCI6MjEwOTQ2Mjk3M30.jwdiVTgqmrWevcWxkUOnaZcUUK1ujHmo1a5yMWWT1mo"
+};
+</script>
+<script>(function(){
+  var $=function(id){return document.getElementById(id)};
+  var hint=document.querySelector('.hint');
+  if(typeof L==='undefined'){hint.textContent='Библиотека карты не загрузилась. Проверьте интернет.';return}
+
+  var CFG=window.CFG||{}, sb=null;
+  if(typeof supabase!=='undefined'&&CFG.url&&CFG.url.indexOf('ВАШ')<0){sb=supabase.createClient(CFG.url,CFG.key)}
+  else{hint.textContent='База ещё не подключена (ключи Supabase в начале файла), отметки пока сохранять нельзя'}
+
+  var reports=[], pending=null, blob=null, tmp=null;
+  var bounds=L.latLngBounds([55.60,37.78],[55.74,38.04]);
+  var map=L.map('map',{maxBounds:bounds.pad(.15),minZoom:11,maxZoom:19}).setView([55.6783,37.8940],13);
+  map.attributionControl.setPrefix(false);
+  var tiles=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'});
+  var osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+  var vec=null;
+  try{
+    if(typeof maplibregl!=='undefined'&&L.maplibreGL){
+      vec=L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',attribution:'© OpenStreetMap, © OpenMapTiles, OpenFreeMap'}).addTo(map);
+    }
+  }catch(e){vec=null}
+  if(!vec)tiles.addTo(map);
+  var bases={};
+  if(vec)bases['Карта (OpenFreeMap)']=vec;
+  bases['Схема Esri']=tiles;bases['OpenStreetMap']=osm;
+  L.control.layers(bases).addTo(map);
+  var failed=0;
+  tiles.on('tileerror',function(){if(++failed===3)hint.textContent='Плитки карты не загружаются. Проверьте интернет.'});
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  var layer=L.layerGroup().addTo(map), markers={};
+
+  var lastSig='';
+  function load(force){
+    if(!sb)return;
+    sb.from('reports').select('*').order('created_at',{ascending:false}).limit(500).then(function(r){
+      if(r.error){hint.textContent='Не удалось загрузить отметки: '+r.error.message;return}
+      var d=r.data||[], sig=JSON.stringify(d);
+      if(force!==true&&sig===lastSig)return;
+      lastSig=sig;
+      d.forEach(function(x){if(!(x.photo_url&&String(x.photo_url).indexOf(CFG.url+'/storage/')===0))x.photo_url=null});
+      reports=d;draw();openFromHash();
+    });
+  }
+  function draw(){
+    var V=filtered();updateStats();updateFilterOptions();
+    layer.clearLayers();markers={};
+    V.forEach(function(r){
+      var m=L.marker([r.lat,r.lng],{icon:pinIcon(r),riseOnHover:true}).addTo(layer);
+      m.bindPopup(popupHtml(r));
+      markers[r.id]=m;
+    });
+    var list=$('list');
+    if(list){
+      list.innerHTML=V.length?'':'<li>Пока нет отметок. Нажмите на карту.</li>';
+      V.forEach(function(r){
+        var li=document.createElement('li');
+        li.innerHTML=(r.flagged?'<span class="tag">Скрыто: нужна проверка</span><br>':'')+'<b>'+esc(r.type)+'</b><br><small>'+new Date(r.created_at).toLocaleDateString('ru-RU')+'</small><br>'+esc(r.descr||'')+
+          (r.photo_url?'<img src="'+esc(r.photo_url)+'" alt="">':'');
+        li.onclick=function(){closeSheet();map.setView([r.lat,r.lng],17);markers[r.id].openPopup()};
+        list.appendChild(li);
+      });
+    }
+    var sel=$('pick'), cur=sel.value;
+    sel.innerHTML='<option value="">Без отметки (пустой шаблон)</option>';
+    reports.forEach(function(r){
+      var o=document.createElement('option');
+      o.value=r.id;o.textContent=r.type+' ('+r.lat.toFixed(4)+', '+r.lng.toFixed(4)+')';
+      sel.appendChild(o);
+    });
+    sel.value=cur;
+  }
+
+  var dlg=$('dlg'), prev=$('prev');
+  map.on('click',function(e){
+    if(!sb){alert('База не подключена. Заполните config.js.');return}
+    if(!bounds.contains(e.latlng)){alert('Карта работает только для Люберец.');return}
+    pending=e.latlng;
+    if(tmp)map.removeLayer(tmp);
+    tmp=L.circleMarker(pending,{radius:10,color:'#fff',weight:2,fillColor:'#2c6e8a',fillOpacity:.9}).addTo(map);
+    $('form').reset();blob=null;photoBusy=false;prev.style.display='none';
+    dlg.showModal();
+  });
+  function closeDlg(){dlg.close();if(tmp){map.removeLayer(tmp);tmp=null}}
+  $('cancel').onclick=closeDlg;
+  dlg.addEventListener('cancel',closeDlg);
+
+  var photoBusy=false;
+  $('photo').onchange=function(e){
+    var f=e.target.files[0];blob=null;prev.style.display='none';if(!f)return;
+    photoBusy=true;
+    var img=new Image(), url=URL.createObjectURL(f);
+    img.onerror=function(){photoBusy=false;URL.revokeObjectURL(url);$('photo').value='';alert('Не удалось прочитать это фото. Выберите снимок в формате JPG или PNG.')};
+    img.onload=function(){
+      var s=Math.min(1,1000/Math.max(img.width,img.height)), c=document.createElement('canvas');
+      c.width=img.width*s;c.height=img.height*s;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(b){photoBusy=false;if(!b){alert('Не удалось обработать фото');return}blob=b;prev.src=URL.createObjectURL(b);prev.style.display='block'},'image/jpeg',.75);
+      URL.revokeObjectURL(url);
+    };
+    img.src=url;
+  };
+
+  $('form').onsubmit=function(e){
+    e.preventDefault();
+    if($('type').value==='__custom'&&!$('ctype').value.trim()){alert('Напишите название загрязнения');return}
+    if(photoBusy){alert('Фото ещё обрабатывается, подождите секунду и нажмите снова');return}
+    var up=null;
+    var btn=$('save');btn.disabled=true;btn.textContent='Сохраняем…';
+    function fail(m){alert('Не удалось сохранить: '+m);btn.disabled=false;btn.textContent='Сохранить отметку'}
+    function insert(url){
+      sb.from('reports').insert({lat:pending.lat,lng:pending.lng,type:typeVal(),descr:$('desc').value.trim(),photo_url:url}).then(function(r){
+        if(r.error){if(up)sb.storage.from('photos').remove([up]);return fail(r.error.message)}
+        var bad=BAD.test(typeVal()+' '+$('desc').value);
+        btn.disabled=false;btn.textContent='Сохранить отметку';closeDlg();load();
+        if(bad)alert('Отметка отправлена администратору на проверку и появится на карте после неё.');
+      });
+    }
+    if(!blob)return insert(null);
+    var name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
+    sb.storage.from('photos').upload(name,blob,{contentType:'image/jpeg'}).then(function(r){
+      if(r.error)return fail(r.error.message);
+      up=name;
+      insert(sb.storage.from('photos').getPublicUrl(name).data.publicUrl);
+    });
+  };
+
+  /* вкладки */
+  function show(k){
+    [['map','t-map','p-map'],['doc','t-doc','p-doc'],['tips','t-tips','p-tips'],['about','t-about','p-about']].forEach(function(t){
+      var on=t[0]===k;
+      $(t[1]).setAttribute('aria-selected',on);$(t[2]).hidden=!on;
+    });
+    if(k==='map')setTimeout(function(){map.invalidateSize()},50);
+  }
+  $('t-map').onclick=function(){show('map')};
+  $('t-doc').onclick=function(){show('doc')};
+  $('t-tips').onclick=function(){show('tips')};
+  $('t-about').onclick=function(){show('about')};
+
+  /* шаблон обращения */
+  var tpl=$('tpl');
+  var LAW={
+    env:'ст. 11 Федерального закона от 10.01.2002 № 7-ФЗ «Об охране окружающей среды» (право граждан на благоприятную окружающую среду)',
+    waste:'Федеральный закон от 24.06.1998 № 89-ФЗ «Об отходах производства и потребления» (накопление и размещение отходов вне предназначенных для этого мест не допускается); ст. 8.2 КоАП РФ',
+    bl:'Правила благоустройства территории городского округа Люберцы',
+    san:'СанПиН 2.1.3684-21 (санитарно-эпидемиологические требования к содержанию территорий городских и сельских поселений)',
+    water:'ст. 65 Водного кодекса РФ (запрет размещения отходов в водоохранных зонах); ст. 8.13 КоАП РФ',
+    forest:'ст. 51 Лесного кодекса РФ (охрана лесов от загрязнения и иного негативного воздействия)',
+    air:'Федеральный закон от 04.05.1999 № 96-ФЗ «Об охране атмосферного воздуха»; ст. 8.21 КоАП РФ',
+    sanit:'Федеральный закон от 30.03.1999 № 52-ФЗ «О санитарно-эпидемиологическом благополучии населения»; ст. 6.3 КоАП РФ',
+    koap:'нормы главы 8 КоАП РФ (ответственность за нарушения в области охраны окружающей среды)'
+  };
+  var UP='Установить лиц, ответственных за нарушение, и принять к ним меры в рамках полномочий.';
+  var PROF={
+    'Стихийная свалка':{w:'стихийную свалку отходов',h:'Свалка загрязняет почву и воздух, привлекает грызунов и создаёт санитарную угрозу для жителей.',L:['env','waste','bl'],
+      R:['Провести проверку и подтвердить факт несанкционированного размещения отходов.','Установить правообладателя земельного участка и лиц, разместивших отходы.','Организовать уборку и вывоз отходов на специализированный объект.','Принять меры, чтобы свалка не появлялась повторно (ограждение, контроль территории).'],
+      cc:'Министерство экологии и природопользования Московской области',tip:'Можно отправить копию в Министерство экологии и природопользования Московской области. Если знаете, кому принадлежит участок, укажите это в письме.'},
+    'Свалка строительного мусора':{w:'свалку строительного мусора',h:'Строительные отходы размещены вне специализированного объекта: это нарушает правила обращения с отходами и портит территорию.',L:['env','waste','bl'],
+      R:['Провести проверку и подтвердить факт несанкционированного размещения строительных отходов.','Установить правообладателя участка, а по возможности (в том числе по записям камер видеонаблюдения) организацию или лиц, вывезших мусор.','Организовать вывоз отходов на специализированный объект и привлечь виновных к ответственности.'],
+      cc:'Министерство экологии и природопользования Московской области',tip:'Если на фото видно технику или номера, не публикуйте их на сайте, но приложите к письму: это поможет найти виновных.'},
+    'Мусор в лесу или у воды':{w:'захламление лесной территории или берега водного объекта',h:'Мусор загрязняет природную территорию и может попасть в водоём.',L:['env','forest','water','waste'],
+      R:['Проверить место и определить, к какой территории оно относится (лес, водоохранная зона, земли муниципалитета).','Организовать уборку силами ответственной организации.','Если территория не в ведении администрации, направить обращение в течение 7 дней в орган, который за неё отвечает, и уведомить меня.'],
+      cc:'Комитет лесного хозяйства Московской области (если лес); Московско-Окское бассейновое водное управление (если водоём)',tip:'Если это лес, копию можно отправить в Комитет лесного хозяйства Московской области, если берег водоёма, то в Московско-Окское бассейновое водное управление.'},
+    'Переполненные контейнеры':{w:'переполненную контейнерную площадку',h:'Отходы не вывозятся вовремя и разбросаны вокруг контейнеров. Это создаёт антисанитарию и запах, привлекает животных.',L:['san','waste','bl'],
+      x:'Адрес контейнерной площадки: [адрес или ближайший дом].',
+      R:['Выяснить, какая организация отвечает за вывоз отходов с площадки (региональный оператор по обращению с ТКО или управляющая организация).','Обязать её обеспечить вывоз отходов с периодичностью, установленной санитарными нормами, и убрать территорию вокруг площадки.','Проверить, достаточно ли контейнеров и в каком они состоянии.'],
+      cc:'региональный оператор по обращению с ТКО; управляющая организация (если площадка дворовая)',tip:'Если площадка у многоквартирного дома, копию можно отправить в управляющую организацию дома.'},
+    'Загрязнение водоёма':{w:'загрязнение водного объекта',h:'Загрязнение опасно для людей, животных и водной экосистемы.',L:['env','water','waste'],
+      x:'Название водоёма: [название или ориентир]. Что видно: [мусор, плёнка, пена, запах, погибшая рыба].',
+      R:['Провести проверку и установить источник загрязнения.','При необходимости организовать отбор проб воды и передать материалы в компетентные органы.','Принять меры по устранению загрязнения и привлечь виновных к ответственности.','Направить информацию в орган, осуществляющий надзор за водными объектами, и уведомить меня.'],
+      cc:'Московско-Окское бассейновое водное управление; Управление Роспотребнадзора по Московской области',tip:'Можно отправить копию в Московско-Окское бассейновое водное управление и в Управление Роспотребнадзора по Московской области.'},
+    'Разлив нефтепродуктов или масла':{w:'разлив нефтепродуктов (топлива или масла)',h:'Нефтепродукты загрязняют почву и воду и могут создавать угрозу возгорания.',L:['env','waste','koap'],
+      x:'Что разлито и примерная площадь: [описание].',
+      R:['Срочно провести проверку и установить источник разлива.','Организовать ликвидацию загрязнения и вывоз загрязнённого грунта на специализированный объект.',UP,'Если загрязнение угрожает водному объекту, передать информацию в экстренные и надзорные органы.'],
+      cc:'территориальное управление Росприроднадзора',tip:'При большом разливе или угрозе возгорания сначала звоните 112, а письмо отправляйте после.'},
+    'Сжигание мусора, дым':{w:'сжигание отходов',h:'Дым и продукты горения загрязняют воздух и вредны для здоровья, особенно детей и пожилых людей.',L:['env','air','waste'],
+      x:'Когда происходило: [дата и время]. Как часто: [разово или регулярно].',
+      R:['Провести проверку и установить лиц, сжигающих отходы.','Пресечь нарушение и привлечь виновных к ответственности.','Направить материалы в орган, осуществляющий надзор за охраной атмосферного воздуха, и уведомить меня.'],
+      cc:'территориальное управление Росприроднадзора',tip:'Если идёт открытый огонь или есть угроза пожара, звоните 112.'},
+    'Неприятный запах, выбросы':{w:'устойчивый неприятный запах и возможные выбросы в атмосферу',h:'Запах мешает жителям, а выбросы могут быть опасны для здоровья.',L:['env','air','sanit'],
+      x:'Когда ощущается запах: [даты и время суток]. Откуда он, по моему мнению, идёт: [направление или предполагаемый источник].',
+      R:['Провести проверку и установить предполагаемый источник запаха.','При необходимости организовать инструментальные замеры качества воздуха (через Роспотребнадзор или Росприроднадзор).','Принять меры к прекращению выбросов и сообщить мне результаты.'],
+      cc:'Управление Роспотребнадзора по Московской области; территориальное управление Росприроднадзора',tip:'Записывайте даты и время, когда чувствуете запах: такие данные помогают проверке.'},
+    'Брошенный автомобиль или техника':{w:'брошенный автомобиль (технику) в общедоступном месте',h:'Разукомплектованный транспорт портит территорию, занимает место, собирает мусор и опасен для детей.',L:['bl','env'],
+      x:'Марка, цвет, номер (если известен): [данные]. Как давно стоит: [срок].',
+      R:['Установить владельца транспортного средства.','Потребовать от владельца убрать транспорт, а если владелец не найден или не отреагировал, организовать вывоз в порядке, предусмотренном Правилами благоустройства.','Сообщить мне о принятых мерах.'],
+      cc:'',tip:'Если автомобиль мешает проезду или создаёт опасность, можно дополнительно сообщить в ГИБДД.'},
+    'Неубранная территория':{w:'неубранную территорию',h:'На территории скапливается мусор, она не содержится в должном порядке.',L:['bl','san','env'],
+      x:'Адрес территории: [двор, улица, ориентир].',
+      R:['Определить организацию, ответственную за содержание территории (управляющая организация, собственник, подрядчик).','Обязать её организовать уборку и содержание территории в соответствии с нормами.','Сообщить мне о принятых мерах.'],
+      cc:'управляющая организация (если это двор дома)',tip:'Для дворов копию можно отправить в управляющую организацию дома.'}
+  };
+  var GEN={w:'загрязнение территории',h:'Загрязнение портит городскую среду и может быть опасно для жителей.',L:['env','waste','bl'],
+    R:['Провести проверку по указанному месту.','Организовать уборку территории и устранение загрязнения.',UP],cc:'',tip:'Опишите ситуацию как можно подробнее: что именно, где и как давно.'};
+  function build(r,t){
+    var P=PROF[t]||GEN, w=P.w;
+    if(!PROF[t]&&r&&r.type)w='загрязнение («'+r.type.toLowerCase()+'»)';
+    var place=r?('Место: городской округ Люберцы, Московская область, координаты '+r.lat.toFixed(5)+', '+r.lng.toFixed(5)+
+      '\nНа карте: https://www.openstreetmap.org/?mlat='+r.lat+'&mlon='+r.lng+'#map=18/'+r.lat+'/'+r.lng):
+      'Место: [адрес или ориентир, городской округ Люберцы, Московская область]';
+    var desc=r&&r.descr?r.descr:'[опишите ситуацию: что именно, площадь, как давно]';
+    var law=P.L.map(function(k){return '— '+LAW[k]}).join('\n');
+    var req=P.R.concat(['Письменно сообщить мне о результатах рассмотрения и принятых мерах.']).map(function(s,i){return (i+1)+'. '+s}).join('\n');
+    return ['Главе городского округа Люберцы','Московской области','[Ф. И. О. главы]',P.cc?'Копия: '+P.cc:null,'',
+      'от [Ваши Ф. И. О.]','проживающего(ей) по адресу: [почтовый адрес]','тел.: [телефон], e-mail: [почта]','',
+      'ОБРАЩЕНИЕ','','Сообщаю, что [дата] я обнаружил(а) '+w+'.',place,'','Описание: '+desc,P.x||null,P.x?'':null,
+      P.h,'',(r&&r.photo_url?'Фото: '+r.photo_url+'\n':'')+'Правовое основание:',law,'','Прошу:',req,'',
+      'Если вопрос не относится к компетенции администрации, прошу в течение 7 дней направить обращение в соответствующий орган (ч. 3 ст. 8 Федерального закона от 02.05.2006 № 59-ФЗ «О порядке рассмотрения обращений граждан Российской Федерации») и уведомить меня об этом. Ответ прошу дать в письменной форме в установленный срок (30 дней со дня регистрации обращения).','',
+      'Приложение: фотографии места загрязнения.','','Дата: [дата]        Подпись: [подпись]'
+    ].filter(function(x){return x!==null}).join('\n');
+  }
+  function tipsFor(t){
+    var P=PROF[t]||GEN;
+    return '<b>Подсказка для этого вида</b><ul><li>'+P.tip+'</li><li>Укажите свои Ф. И. О. и почтовый адрес: анонимные обращения могут оставить без ответа.</li><li>Пишите спокойно и по фактам: так обращение быстрее рассмотрят.</li></ul>';
+  }
+  function fill(){
+    var id=$('pick').value, r=reports.filter(function(x){return String(x.id)===id})[0], t=$('tptype').value;
+    tpl.value=build(r,t);$('tptips').innerHTML=tipsFor(t);
+  }
+  $('pick').onchange=function(){
+    var id=this.value, r=reports.filter(function(x){return String(x.id)===id})[0];
+    if(r){var has=[].some.call($('tptype').options,function(o){return o.value===r.type});$('tptype').value=has?r.type:'__other'}
+    fill();
+  };
+  $('tptype').onchange=fill;
+  $('copy').onclick=function(){
+    var b=this;
+    function done(){b.textContent='Скопировано';setTimeout(function(){b.textContent='Копировать текст'},1800)}
+    if(navigator.clipboard)navigator.clipboard.writeText(tpl.value).then(done,function(){tpl.select();document.execCommand('copy');done()});
+    else{tpl.select();document.execCommand('copy');done()}
+  };
+
+  var BAD=/(х[уy]й|ху[еёя]|пизд|пезд|ебан|ебат|ебал|ебл[аи]|еб[её]т|ёб[аиню]|бл[яe]д|бл[яe]ть|сук[аи]|муд[аи]к|пидор|пидр|залуп|гондон|шлюх|дроч|манд[аоу]в)/i;
+  function typeVal(){return $('type').value==='__custom'?$('ctype').value.trim().slice(0,80):$('type').value}
+  $('type').onchange=function(){var c=this.value==='__custom';$('ctype').hidden=!c;if(c)$('ctype').focus()};
+  $('form').addEventListener('reset',function(){$('ctype').hidden=true});
+
+  /* администратор */
+  var admin=false, rid=null;
+  function setAdmin(on){
+    admin=on;$('adm').innerHTML=on?'<span class="full">Выйти из режима администратора</span><span class="short">Выйти</span>':'<span class="full">Вход для администратора</span><span class="short">Админ</span>';
+    $('reqbox').hidden=!on;load(true);loadReq();
+  }
+  if(sb){sb.auth.getSession().then(function(r){if(r.data&&r.data.session)setAdmin(true)})}
+  $('adm').onclick=function(){
+    if(!sb){alert('База не подключена');return}
+    if(admin){sb.auth.signOut().then(function(){setAdmin(false)})}else{$('ldlg').showModal()}
+  };
+  $('lform').onsubmit=function(e){
+    e.preventDefault();
+    sb.auth.signInWithPassword({email:$('lmail').value.trim(),password:$('lpass').value}).then(function(r){
+      if(r.error){alert('Не удалось войти: '+r.error.message);return}
+      $('ldlg').close();setAdmin(true);
+    });
+  };
+  function loadReq(){
+    if(!admin||!sb)return;
+    sb.from('removal_requests').select('*,reports(type)').order('created_at',{ascending:false}).then(function(r){
+      var ul=$('rlist');ul.innerHTML='';
+      if(r.error){ul.innerHTML='<li>'+esc(r.error.message)+'</li>';return}
+      if(!r.data.length){ul.innerHTML='<li>Запросов нет</li>';return}
+      r.data.forEach(function(q){
+        var li=document.createElement('li');
+        li.innerHTML='<b>'+esc(q.reports?q.reports.type:'')+'</b><br>'+esc(q.reason||'Без причины')+(q.contact?'<br><small>Контакт: '+esc(q.contact)+'</small>':'')+
+          '<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn sm ghost" data-act="show" data-id="'+q.report_id+'">На карте</button><button class="btn sm ghost" data-act="dismiss" data-id="'+q.id+'">Отклонить</button><button class="btn sm danger" data-act="del" data-id="'+q.report_id+'">Удалить точку</button></div>';
+        ul.appendChild(li);
+      });
+    });
+  }
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest('[data-act]');if(!b)return;
+    var id=+b.dataset.id, act=b.dataset.act;
+    function done(r){
+      if(r.error){alert(r.error.message);return}
+      if(!r.data||!r.data.length){alert('Нет прав. Войдите как администратор.');return}
+      map.closePopup();load();loadReq();
+    }
+    if(act==='ask'){rid=id;$('rform').reset();$('rdlg').showModal()}
+    else if(act==='del'){
+      if(confirm('Удалить отметку навсегда?')){
+        var dr=reports.filter(function(x){return x.id===id})[0];
+        sb.from('reports').delete().eq('id',id).select().then(function(r){
+          done(r);
+          if(!r.error&&r.data&&r.data.length&&dr&&dr.photo_url){var nm=dr.photo_url.split('/photos/')[1];if(nm)sb.storage.from('photos').remove([decodeURIComponent(nm)])}
+        });
+      }
+    }
+    else if(act==='ok'){sb.from('reports').update({flagged:false}).eq('id',id).select().then(done)}
+    else if(act==='dismiss'){sb.from('removal_requests').delete().eq('id',id).select().then(done)}
+    else if(act==='share'){var u=location.href.split('#')[0]+'#p'+id;if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){alert('Ссылка на точку скопирована')},function(){prompt('Скопируйте ссылку:',u)});else prompt('Скопируйте ссылку:',u)}
+    else if(act==='conf'){
+      if(getVotes().indexOf(id)>=0){alert('Вы уже подтверждали эту точку');return}
+      sb.rpc('confirm_report',{rid:id}).then(function(r){if(r.error){alert('Не удалось: '+r.error.message);return}addVote(id);map.closePopup();load()});
+    }
+    else if(act==='res'){var rr=reports.filter(function(x){return x.id===id})[0];sb.from('reports').update({resolved:!(rr&&rr.resolved)}).eq('id',id).select().then(done)}
+    else if(act==='show'){closeSheet();var rp=reports.filter(function(x){return x.id===id})[0];if(rp&&markers[id]){map.setView([rp.lat,rp.lng],17);markers[id].openPopup()}}
+  });
+  $('rcancel').onclick=function(){$('rdlg').close()};
+  $('rform').onsubmit=function(e){
+    e.preventDefault();
+    sb.from('removal_requests').insert({report_id:rid,reason:$('rreason').value.trim().slice(0,500),contact:$('rcontact').value.trim().slice(0,100)}).then(function(r){
+      if(r.error){alert('Не удалось отправить: '+r.error.message);return}
+      $('rdlg').close();alert('Спасибо! Запрос отправлен администратору.');
+    });
+  };
+
+  var SHOWDONE=true;
+  try{SHOWDONE=localStorage.getItem('lub_showdone')!=='0'}catch(e){}
+  var ICONS={
+    'Стихийная свалка':['#8a5a2b','<path d="M5 7h10l-1 10H6z" fill="#fff"/><rect x="3.5" y="4.5" width="13" height="2" rx="1" fill="#fff"/><rect x="8" y="2.5" width="4" height="2" rx="1" fill="#fff"/><path d="M8.2 9v6M11.8 9v6" stroke="{c}" stroke-width="1.2"/>'],
+    'Свалка строительного мусора':['#c2692a','<rect x="2.5" y="4" width="7" height="4" rx=".6" fill="#fff"/><rect x="10.5" y="4" width="7" height="4" rx=".6" fill="#fff"/><rect x="2.5" y="9" width="3.5" height="4" rx=".6" fill="#fff"/><rect x="7" y="9" width="6.5" height="4" rx=".6" fill="#fff"/><rect x="14.5" y="9" width="3" height="4" rx=".6" fill="#fff"/><rect x="5" y="14" width="10" height="3.5" rx=".6" fill="#fff"/>'],
+    'Мусор в лесу или у воды':['#4a8f3a','<path d="M10 1.5l5.5 7h-3l4 5.5H3.5l4-5.5h-3z" fill="#fff"/><rect x="9" y="13.8" width="2" height="4" fill="#fff"/>'],
+    'Переполненные контейнеры':['#3d6fa8','<path d="M2 8.5l1.2-4.5h13.6L18 8.5z" fill="#fff"/><rect x="3" y="9.5" width="14" height="8" rx="1" fill="#fff"/><path d="M7 11.5v4M10 11.5v4M13 11.5v4" stroke="{c}" stroke-width="1.2"/>'],
+    'Загрязнение водоёма':['#2a8fb8','<path d="M10 1.5S4 8.8 4 12.6a6 6 0 0 0 12 0C16 8.8 10 1.5 10 1.5z" fill="#fff"/><path d="M7.2 13a3 3 0 0 0 2.2 2.8" stroke="{c}" stroke-width="1.4" fill="none" stroke-linecap="round"/>'],
+    'Разлив нефтепродуктов или масла':['#3b3b45','<path d="M10 1.5S5.8 6.3 5.8 9a4.2 4.2 0 0 0 8.4 0C14.2 6.3 10 1.5 10 1.5z" fill="#fff"/><ellipse cx="10" cy="16" rx="7.5" ry="2.6" fill="#fff"/>'],
+    'Сжигание мусора, дым':['#e0501f','<path d="M10.5 1c.8 4 5 5.4 5 10.2a5.5 5.5 0 0 1-11 0c0-2.3 1.1-3.6 2.3-4.8.1 2 .9 3 2 3.2C8.2 6.8 9 4 10.5 1z" fill="#fff"/><path d="M10 17a2.4 2.4 0 0 1-2.4-2.4c0-1.4 1.2-2.2 2.4-3.4 1.2 1.2 2.4 2 2.4 3.4A2.4 2.4 0 0 1 10 17z" fill="{c}"/>'],
+    'Неприятный запах, выбросы':['#7a5aa6','<path d="M5.5 15.5a3.8 3.8 0 0 1-.6-7.5 5 5 0 0 1 9.6.6 3.5 3.5 0 0 1-.6 6.9z" fill="#fff"/><path d="M7 18.3h6" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>'],
+    'Брошенный автомобиль или техника':['#c9961a','<path d="M2.5 11.5L4 7.2a2 2 0 0 1 1.9-1.4h8.2A2 2 0 0 1 16 7.2l1.5 4.3v4h-15z" fill="#fff"/><path d="M5.3 7.3h9.4l1 3.2H4.3z" fill="{c}" opacity=".35"/><circle cx="6" cy="15.5" r="2.1" fill="#fff" stroke="{c}" stroke-width="1.2"/><circle cx="14" cy="15.5" r="2.1" fill="#fff" stroke="{c}" stroke-width="1.2"/>'],
+    'Неубранная территория':['#1f8a70','<path d="M13.5 1.8l1.7 1.2-4.2 7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M5 11.5l5.2-2.2 3.6 3.2-1.3 5.5H4.2z" fill="#fff"/><path d="M7.5 13.5l-.6 3.5M10 13l-.3 4M12.4 13.4l.3 3.6" stroke="{c}" stroke-width="1"/>']
+  };
+  var ICON_OTHER=['#d9531e','<rect x="8.8" y="2.5" width="2.4" height="9" rx="1.2" fill="#fff"/><circle cx="10" cy="15.5" r="1.7" fill="#fff"/>'];
+  function pinIcon(r){
+    var d=ICONS[r.type]||ICON_OTHER, col=r.flagged?'#555':d[0];
+    var badge=(r.resolved&&SHOWDONE)?'<circle cx="27" cy="7" r="7" fill="#2f9e5b" stroke="#fff" stroke-width="2"/><path d="M23.6 7.2l2.4 2.4 3.8-4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>':'';
+    var svg='<svg width="34" height="44" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg"><path d="M17 1.5C8.2 1.5 1.5 8.3 1.5 16.7c0 11.6 15.5 25.8 15.5 25.8s15.5-14.2 15.5-25.8C32.5 8.3 25.8 1.5 17 1.5z" fill="'+col+'" stroke="#fff" stroke-width="2"/><g transform="translate(7 6.5)">'+d[1].replace(/\{c\}/g,col)+'</g>'+badge+'</svg>';
+    return L.divIcon({className:'pin'+(r.resolved?' done':''),html:svg,iconSize:[34,44],iconAnchor:[17,42],popupAnchor:[0,-38]});
+  }
+  function buildLegend(){
+    var h='';
+    Object.keys(ICONS).concat(['__o']).forEach(function(k){
+      var d=k==='__o'?ICON_OTHER:ICONS[k];
+      h+='<div class="lg"><svg width="26" height="26" viewBox="-4 -4 28 28"><circle cx="10" cy="10" r="13" fill="'+d[0]+'"/>'+d[1].replace(/\{c\}/g,d[0])+'</svg><span>'+(k==='__o'?'Другое (своё название)':k)+'</span></div>';
+    });
+    h+='<div class="lg"><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="13" cy="13" r="9" fill="#2f9e5b"/><path d="M8.5 13.2l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Зелёная галочка: место убрано</span></div>';
+    $('lgbox').innerHTML=h;
+  }
+  buildLegend();
+  $('setdone').checked=SHOWDONE;
+  $('setdone').onchange=function(){
+    SHOWDONE=this.checked;
+    try{localStorage.setItem('lub_showdone',SHOWDONE?'1':'0')}catch(e){}
+    draw();
+  };
+
+  function closeSheet(){$('side').classList.remove('open');$('sheetbtn').textContent='Список, фильтры, настройки'}
+  $('sheetbtn').onclick=function(){var s=$('side');s.classList.toggle('open');this.textContent=s.classList.contains('open')?'Свернуть':'Список, фильтры, настройки'};
+  var FT='',FS='';
+  function filtered(){return reports.filter(function(r){return (!FT||r.type===FT)&&(!FS||(FS==='done')===!!r.resolved)})}
+  function updateStats(){
+    var a=reports.filter(function(r){return !r.flagged}), d=a.filter(function(r){return r.resolved}).length;
+    $('st-all').textContent=a.length;$('st-done').textContent=d;$('st-open').textContent=a.length-d;
+  }
+  function updateFilterOptions(){
+    var s=$('ftype'), seen={}, o='<option value="">Все типы</option>';
+    reports.forEach(function(r){if(!seen[r.type]){seen[r.type]=1;o+='<option value="'+esc(r.type)+'">'+esc(r.type)+'</option>'}});
+    s.innerHTML=o;s.value=FT;if(s.value!==FT){FT='';s.value=''}
+  }
+  $('ftype').onchange=function(){FT=this.value;draw()};
+  $('fstat').onchange=function(){FS=this.value;draw()};
+  function getVotes(){try{return JSON.parse(localStorage.getItem('lub_votes')||'[]')}catch(e){return[]}}
+  function addVote(id){try{var v=getVotes();v.push(id);localStorage.setItem('lub_votes',JSON.stringify(v))}catch(e){}}
+  function popupHtml(r){
+    var n=r.confirms||0, b='<button class="btn sm ghost" data-act="share" data-id="'+r.id+'">Поделиться</button>';
+    if(!r.resolved)b+='<button class="btn sm ghost" data-act="conf" data-id="'+r.id+'">Я тоже вижу проблему</button>';
+    if(admin){
+      if(r.flagged)b+='<button class="btn sm" data-act="ok" data-id="'+r.id+'">Одобрить</button>';
+      b+='<button class="btn sm" data-act="res" data-id="'+r.id+'">'+(r.resolved?'Вернуть: не убрано':'Отметить: убрано')+'</button><button class="btn sm danger" data-act="del" data-id="'+r.id+'">Удалить</button>';
+    }else b+='<button class="btn sm ghost" data-act="ask" data-id="'+r.id+'">Просить убрать точку</button>';
+    return '<div class="pop">'+(r.flagged?'<span class="tag">Скрыто от всех: нужна проверка</span> ':'')+(r.resolved?'<span class="tag ok">Убрано</span> ':'')+
+      '<b>'+esc(r.type)+'</b><br>'+esc(r.descr||'Без описания')+(n?'<br><small>Подтвердили: '+n+'</small>':'')+
+      (r.photo_url?'<img src="'+esc(r.photo_url)+'" alt="Фото загрязнения">':'')+'<div class="row pr">'+b+'</div></div>';
+  }
+  var hashDone=false;
+  function openFromHash(){
+    if(hashDone)return;var m=/^#p(\d+)$/.exec(location.hash);if(!m)return;
+    var id=+m[1], r=reports.filter(function(x){return x.id===id})[0];
+    if(r&&markers[id]){hashDone=true;map.setView([r.lat,r.lng],17);markers[id].openPopup()}
+  }
+  $('csv').onclick=function(){
+    var rows=[['№','Дата','Тип','Описание','Широта','Долгота','Статус','Подтверждений','Фото']];
+    filtered().forEach(function(r,i){rows.push([i+1,new Date(r.created_at).toLocaleDateString('ru-RU'),r.type,r.descr||'',String(r.lat).replace('.',','),String(r.lng).replace('.',','),r.resolved?'Убрано':'Не убрано',r.confirms||0,r.photo_url||''])});
+    var csv='\ufeff'+rows.map(function(row){return row.map(function(v){v=String(v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}).join(';')}).join('\r\n');
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    a.download='zagryazneniya-lyubertsy.csv';document.body.appendChild(a);a.click();a.remove();
+  };
+  $('locate').onclick=function(){
+    if(!navigator.geolocation){alert('Определение места не поддерживается этим браузером');return}
+    navigator.geolocation.getCurrentPosition(function(p){
+      var ll=L.latLng(p.coords.latitude,p.coords.longitude);
+      if(!bounds.contains(ll)){alert('Вы сейчас не в Люберцах. Карта работает только для города.');return}
+      go(ll.lat,ll.lng);
+    },function(){alert('Не удалось определить место. Разрешите доступ к геопозиции в браузере.')},{enableHighAccuracy:true,timeout:10000});
+  };
+
+  var stimer=null, sseq=0;
+  $('q').addEventListener('input',function(){
+    clearTimeout(stimer);var q=this.value.trim(), box=$('sres');
+    if(q.length<3){box.hidden=true;return}
+    stimer=setTimeout(function(){
+      var my=++sseq;
+      fetch('https://photon.komoot.io/api/?limit=7&bbox=37.78,55.60,38.04,55.74&q='+encodeURIComponent(q))
+      .then(function(r){return r.json()}).then(function(d){
+        if(my!==sseq)return;
+        var f=d.features||[];box.innerHTML='';
+        if(!f.length){box.hidden=true;return}
+        f.forEach(function(x){
+          var p=x.properties||{}, c=x.geometry.coordinates;
+          var st=p.street?p.street+(p.housenumber?', '+p.housenumber:''):(p.housenumber||'');
+          var parts=[p.name,st,p.district||p.locality,p.city].filter(function(v,i,a){return v&&a.indexOf(v)===i});
+          var li=document.createElement('li');li.textContent=parts.join(', ');
+          li.onclick=function(){$('q').value=li.textContent;go(c[1],c[0])};
+          box.appendChild(li);
+        });
+        box.hidden=false;
+      }).catch(function(){});
+    },350);
+  });
+
+  var sm=null;
+  function go(lat,lng){
+    $('sres').hidden=true;map.setView([lat,lng],18);
+    if(sm)map.removeLayer(sm);
+    sm=L.circleMarker([lat,lng],{radius:8,color:'#2f7d4a',weight:3,fillColor:'#fff',fillOpacity:1}).addTo(map).bindTooltip('Нажмите рядом на карту, чтобы отметить место').openTooltip();
+  }
+  $('sform').onsubmit=function(e){
+    e.preventDefault();
+    var q=$('q').value.trim(), box=$('sres');if(!q)return;
+    box.innerHTML='<li>Ищем…</li>';box.hidden=false;
+    var full=q.toLowerCase().indexOf('люберц')<0?q+', Люберцы':q;
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=6&accept-language=ru&viewbox=37.78,55.74,38.04,55.60&bounded=1&q='+encodeURIComponent(full))
+    .then(function(r){return r.json()}).then(function(a){
+      box.innerHTML='';
+      if(!a.length){box.innerHTML='<li>Ничего не найдено. Попробуйте улицу и номер дома.</li>';return}
+      a.forEach(function(x){
+        var li=document.createElement('li');
+        li.textContent=x.display_name.split(', ').slice(0,4).join(', ');
+        li.onclick=function(){go(+x.lat,+x.lon)};box.appendChild(li);
+      });
+    }).catch(function(){box.innerHTML='<li>Поиск сейчас недоступен</li>'});
+  };
+  map.on('click',function(){$('sres').hidden=true;closeSheet()});
+
+  draw();fill();load();
+  var popOpen=false;
+  map.on('popupopen',function(){popOpen=true});map.on('popupclose',function(){popOpen=false});
+  setInterval(function(){if(!popOpen)load()},30000);
+})();
+</script></body></html>
