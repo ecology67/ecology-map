@@ -113,14 +113,14 @@ input,select,textarea{font:inherit;width:100%;padding:9px 11px;border:1px solid 
 <section id="p-about" hidden><div class="page"><h2>О проекте</h2>
 <div class="card"><h3>Зачем он нужен</h3><p style="margin:4px 0 0">Сайт собирает на одной карте места загрязнения в Люберцах, чтобы о них узнавали и жители, и администрация. Любой может отметить место, приложить фото и отправить обращение по готовому шаблону.</p></div>
 <div class="card"><h3>Как это работает</h3><ul><li>Нажмите на карту, опишите проблему, фото по желанию.</li><li>Кнопка «Я тоже вижу проблему» показывает, какие места беспокоят многих.</li><li>Когда место убрали, администратор помечает точку зелёной.</li></ul></div>
-<div class="card"><h3>Правила и модерация</h3><ul><li>Отметки с нецензурной лексикой скрываются и проверяются администратором.</li><li>Точки удаляет только администратор, по просьбе жителей или при нарушениях.</li><li>Не загружайте фото людей и номеров автомобилей.</li></ul></div>
-<div class="card"><h3>Какие данные хранятся</h3><p style="margin:4px 0 0">Тип и описание загрязнения, координаты и фото. Имя и телефон не требуются. Контакт в просьбе об удалении виден только администратору.</p></div>
+<div class="card"><h3>Правила и модерация</h3><ul><li>Отметки с нецензурной лексикой скрываются и проверяются администратором.</li><li>Точки удаляет только администратор, по просьбе жителей или при нарушениях.</li><li>Не загружайте фото людей и номеров автомобилей.</li><li>Не публикуйте обвинения в адрес конкретных людей и организаций без доказательств: такие отметки удаляются.</li><li>Сайт не является официальным ресурсом администрации городского округа Люберцы.</li></ul></div>
+<div class="card"><h3>Данные и конфиденциальность</h3><p style="margin:4px 0 0">Сайт не запрашивает имя, телефон и почту посетителей. Хранятся тип и описание загрязнения, координаты и фото. Не указывайте в описании и на фото личные данные других людей. Как и любой сайт, хостинг (GitHub) и хранилище данных (Supabase) технически обрабатывают сетевые данные посетителей, например IP-адрес. Если вы нашли на сайте свои данные или нарушение, напишите администратору, и информация будет удалена.</p></div>
 <div class="card"><h3>Контакты</h3><p style="margin:4px 0 0">Проект «Чистые Люберцы». Связь с администратором: <a href="mailto:chisryelubercy@gmail.com">chisryelubercy@gmail.com</a></p></div>
 </div></section>
 <dialog id="dlg"><form method="dialog" id="form"><b style="font-size:1.1rem">Новая отметка</b>
 <label for="type">Что за загрязнение</label><select id="type"><option>Стихийная свалка</option><option>Свалка строительного мусора</option><option>Мусор в лесу или у воды</option><option>Переполненные контейнеры</option><option>Загрязнение водоёма</option><option>Разлив нефтепродуктов или масла</option><option>Сжигание мусора, дым</option><option>Неприятный запах, выбросы</option><option>Брошенный автомобиль или техника</option><option>Неубранная территория</option><option value="__custom">Другое: напишу сам…</option></select>
 <input id="ctype" hidden maxlength="80" placeholder="Напишите, что за загрязнение" style="margin-top:8px">
-<label for="desc">Описание</label><textarea id="desc" rows="3" placeholder="Что здесь и как давно"></textarea>
+<label for="desc">Описание</label><textarea id="desc" rows="3" placeholder="Что здесь и как давно"></textarea><small style="opacity:.7">Не указывайте ФИО, телефоны и обвинения в адрес конкретных людей или организаций.</small>
 <label for="photo">Фото места <small>(необязательно)</small></label><input type="file" id="photo" accept="image/*"><small style="opacity:.7">Не снимайте людей и номера автомобилей.</small><img id="prev" alt="Предпросмотр фото">
 <div class="row"><button type="button" class="btn ghost" id="cancel">Отмена</button><button type="submit" class="btn" id="save">Сохранить отметку</button></div></form></dialog></main>
 <dialog id="ldlg"><form id="lform" method="dialog"><b style="font-size:1.1rem">Вход для администратора</b>
@@ -130,7 +130,7 @@ input,select,textarea{font:inherit;width:100%;padding:9px 11px;border:1px solid 
 <dialog id="rdlg"><form id="rform" method="dialog"><b style="font-size:1.1rem">Просьба убрать точку</b>
 <p style="font-size:.9rem;margin:6px 0 0">Например: вы отправили обращение, и место убрали. Администратор проверит и удалит точку.</p>
 <label for="rreason">Что случилось</label><textarea id="rreason" rows="3" maxlength="500" required placeholder="Место убрали / отметка поставлена по ошибке"></textarea>
-<label for="rcontact">Как с вами связаться <small>(необязательно)</small></label><input id="rcontact" maxlength="100" placeholder="Почта или телефон">
+<p style="font-size:.85rem;opacity:.75;margin:10px 0 0">Не указывайте личные данные (ФИО, телефон, почту).</p>
 <div class="row"><button type="button" class="btn ghost" id="rcancel">Отмена</button><button class="btn" type="submit">Отправить</button></div></form></dialog>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
@@ -443,7 +443,7 @@ window.CFG = {
   $('rcancel').onclick=function(){$('rdlg').close()};
   $('rform').onsubmit=function(e){
     e.preventDefault();
-    sb.from('removal_requests').insert({report_id:rid,reason:$('rreason').value.trim().slice(0,500),contact:$('rcontact').value.trim().slice(0,100)}).then(function(r){
+    sb.from('removal_requests').insert({report_id:rid,reason:$('rreason').value.trim().slice(0,500),contact:''}).then(function(r){
       if(r.error){alert('Не удалось отправить: '+r.error.message);return}
       $('rdlg').close();alert('Спасибо! Запрос отправлен администратору.');
     });
